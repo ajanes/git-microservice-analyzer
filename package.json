@@ -1,0 +1,101 @@
+{
+  "name": "git-microservice-analyzer",
+  "displayName": "Git Microservices Analyzer",
+  "description": "Plugin that analyzes Git metadata to assess microservice systems.",
+  "version": "0.1.0",
+  "publisher": "ajanes",
+  "engines": {
+    "vscode": "^1.56.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "keywords": [
+    "git",
+    "microservices",
+    "metadata",
+    "statical analysis"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:git-microservice-analyzer.status"
+  ],
+  "icon": "src/assets/icon.png",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "git-microservice-analyzer.analyze",
+        "title": "GIT Microservices Analyzer: Analyze Git History"
+      },
+      {
+        "command": "git-microservice-analyzer.showBarChart",
+        "title": "GIT Microservices Analyzer: Show co-commited folders"
+      },
+      {
+        "command": "git-microservice-analyzer.showMatrixPanel",
+        "title": "GIT Microservices Analyzer: Show co-commits as matrix"
+      },
+      {
+        "command": "git-microservice-analyzer.showChordDiagram",
+        "title": "GIT Microservices Analyzer: Show co-commits as chord diagram"
+      }
+    ], 
+    "configuration": {
+      "title": "Git Microservices Analyzer",
+      "properties": {
+        "gitMicroservicesAnalyzer.scanFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of relative folder paths to include in analysis (relative to project root)"
+        },
+        "gitMicroservicesAnalyzer.yearsBack": {
+          "type": "number",
+          "default": 1,
+          "minimum": 1,
+          "description": "Number of years back to include in Git history analysis"
+        }
+      }
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/aaandri98/git-microservice-analyzer/issues",
+    "email": "an.righi7@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aaandri98/git-microservice-analyzer"
+  },
+  "homepage": "https://git-microservice-analyzer.ml",
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.4",
+    "@types/node": "14.x",
+    "@types/vscode": "^1.56.0",
+    "esbuild": "^0.12.8",
+    "eslint": "^7.19.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.2.1",
+    "typescript": "^4.1.3",
+    "vscode-test": "^1.5.0"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "moment": "^2.29.1",
+    "node-fetch": "^2.6.1",
+    "util": "^0.12.4"
+  }
+}

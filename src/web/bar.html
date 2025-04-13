@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Folders Co-Committed with Other Folders</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: var(--vscode-editor-background);
+      color: var(--vscode-editor-foreground);
+    }
+    .bar {
+      fill: steelblue;
+    }
+    .bar:hover {
+      fill: orange;
+    }
+    .axis-label {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Folders Co-Committed with Other Folders</h2>
+  <svg width="800" height="1000"></svg>
+  <script>
+    const data = {{barData}};
+    const svg = d3.select("svg");
+    const margin = { top: 20, right: 30, bottom: 30, left: 250 };
+    const width = +svg.attr("width") - margin.left - margin.right;
+    const height = +svg.attr("height") - margin.top - margin.bottom;
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const y = d3.scaleBand()
+      .domain(data.map(d => d.name))
+      .rangeRound([0, height])
+      .padding(0.1);
+
+    const x = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.count)])
+      .range([0, width]);
+
+    g.append("g")
+      .call(d3.axisLeft(y));
+
+    g.selectAll(".bar")
+      .data(data)
+      .enter().append("rect")
+        .attr("class", "bar")
+        .attr("y", d => y(d.name))
+        .attr("height", y.bandwidth())
+        .attr("x", 0)
+        .attr("width", d => x(d.count));
+
+    g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+  </script>
+</body>
+</html>

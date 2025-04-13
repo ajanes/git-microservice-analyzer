@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      color: var(--vscode-editor-foreground);
+      background-color: var(--vscode-editor-background);
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid var(--vscode-editorWidget-border);
+      padding: 4px;
+      font-size: 11px;
+      text-align: center;
+      color: inherit;
+      background-color: var(--vscode-editor-background);
+    }
+    thead th {
+      background-color: var(--vscode-sideBar-background);
+    }
+  </style>
+</head>
+<body>
+  <h2>Commit Co-modification Matrix</h2>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        {{tableHeaders}}
+      </tr>
+    </thead>
+    <tbody>
+      {{tableRows}}
+    </tbody>
+  </table>
+</body>
+</html>
