@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
-  <title>Folders Co-Committed with Other Folders</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -11,32 +11,51 @@
       background-color: var(--vscode-editor-background);
       color: var(--vscode-editor-foreground);
     }
+
     .bar {
       fill: steelblue;
     }
+
     .bar:hover {
       fill: orange;
     }
+
     .axis-label {
       font-size: 12px;
     }
   </style>
 </head>
+
 <body>
-  <h2>Folders Co-Committed with Other Folders</h2>
-  <svg width="800" height="1000"></svg>
+  <svg width="800"></svg>
+
   <script>
-    const data = {{barData}};
+    console.error("1");
+    const data = {{ barData }};
+    console.error("2");
+    const barHeight = 20;
+    console.error("3");
+    const longestLabelLength = Math.max(...data.map(d => d.name.length));
+    console.error("4");
+    const margin = {
+      top: 10,
+      right: 20,
+      bottom: 30,
+      left: Math.max(100, longestLabelLength * 5) // ~7px per character
+    };
+    console.log("5");
     const svg = d3.select("svg");
-    const margin = { top: 20, right: 30, bottom: 30, left: 250 };
+
+    const height = data.length * (barHeight + 4); // 4px padding between bars
+    svg.attr("height", height + margin.top + margin.bottom);
+
     const width = +svg.attr("width") - margin.left - margin.right;
-    const height = +svg.attr("height") - margin.top - margin.bottom;
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const y = d3.scaleBand()
       .domain(data.map(d => d.name))
-      .rangeRound([0, height])
-      .padding(0.1);
+      .range([0, height])
+      .padding(0.2);
 
     const x = d3.scaleLinear()
       .domain([0, d3.max(data, d => d.count)])
@@ -48,15 +67,16 @@
     g.selectAll(".bar")
       .data(data)
       .enter().append("rect")
-        .attr("class", "bar")
-        .attr("y", d => y(d.name))
-        .attr("height", y.bandwidth())
-        .attr("x", 0)
-        .attr("width", d => x(d.count));
+      .attr("class", "bar")
+      .attr("y", d => y(d.name))
+      .attr("height", y.bandwidth())
+      .attr("x", 0)
+      .attr("width", d => x(d.count));
 
     g.append("g")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
   </script>
 </body>
+
 </html>

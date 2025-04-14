@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
 
-const getChordDiagram = (commitList) => {
+const getCoCommitsAsChordChart = (commitList) => {
   const barChordData = {};
 
   commitList.forEach((oc) => {
@@ -32,13 +32,13 @@ const getChordDiagram = (commitList) => {
   const templatePath = path.join(__dirname, "web", "chord.html");
   let chordHtml = fs.readFileSync(templatePath, "utf8");
   chordHtml = chordHtml
-    .replace("{{matrixData}}", JSON.stringify(bcdOutput))
-    .replace("{{keys}}", JSON.stringify(bcdKeys));
+    .replace("{{ matrixData }}", JSON.stringify(bcdOutput))
+    .replace("{{ keys }}", JSON.stringify(bcdKeys));
 
   panel.webview.html = chordHtml;
 };
 
 
 module.exports = {
-  getChordDiagram
+  getCoCommitsAsChordChart
 };

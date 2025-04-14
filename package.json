@@ -31,21 +31,21 @@
     "commands": [
       {
         "command": "git-microservice-analyzer.analyze",
-        "title": "GIT Microservices Analyzer: Analyze Git History"
+        "title": "GIT Microservices Analyzer: Refresh analysis"
       },
       {
-        "command": "git-microservice-analyzer.showBarChart",
+        "command": "git-microservice-analyzer.showCoCommitsAsBarChart",
         "title": "GIT Microservices Analyzer: Show co-commited folders"
       },
       {
-        "command": "git-microservice-analyzer.showMatrixPanel",
+        "command": "git-microservice-analyzer.showCoCommitsAsMatrix",
         "title": "GIT Microservices Analyzer: Show co-commits as matrix"
       },
       {
-        "command": "git-microservice-analyzer.showChordDiagram",
+        "command": "git-microservice-analyzer.showCoCommitsAsChordChart",
         "title": "GIT Microservices Analyzer: Show co-commits as chord diagram"
       }
-    ], 
+    ],
     "configuration": {
       "title": "Git Microservices Analyzer",
       "properties": {
@@ -57,24 +57,24 @@
           "default": [],
           "description": "List of relative folder paths to include in analysis (relative to project root)"
         },
-        "gitMicroservicesAnalyzer.yearsBack": {
+        "gitMicroservicesAnalyzer.daysBack": {
           "type": "number",
           "default": 1,
           "minimum": 1,
-          "description": "Number of years back to include in Git history analysis"
+          "description": "Number of days back to include in Git history analysis"
         }
       }
     }
   },
   "bugs": {
-    "url": "https://github.com/aaandri98/git-microservice-analyzer/issues",
-    "email": "an.righi7@gmail.com"
+    "url": "https://github.com/ajanes/git-microservice-analyzer/issues",
+    "email": "janes.andrea@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aaandri98/git-microservice-analyzer"
+    "url": "https://github.com/ajanes/git-microservice-analyzer"
   },
-  "homepage": "https://git-microservice-analyzer.ml",
+  "homepage": "https://github.com/ajanes/git-microservice-analyzer",
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",

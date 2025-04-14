@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
 
-const getMatrixPanel = (commitList) => {
+const getCoCommitsAsMatrix = (commitList) => {
   const barChordData = {};
 
   commitList.forEach((oc) => {
@@ -47,12 +47,12 @@ const getMatrixPanel = (commitList) => {
   const templatePath = path.join(__dirname, "web", "matrix.html");
   let matrixHtml = fs.readFileSync(templatePath, "utf8");
   matrixHtml = matrixHtml
-    .replace("{{tableHeaders}}", tableHeaders)
-    .replace("{{tableRows}}", tableRows);
+    .replace("{{ tableHeaders }}", tableHeaders)
+    .replace("{{ tableRows }}", tableRows);
 
   panel.webview.html = matrixHtml;
 };
 
 module.exports = {
-  getMatrixPanel
+  getCoCommitsAsMatrix
 };

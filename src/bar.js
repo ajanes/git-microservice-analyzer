@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
 
-const getBarData = (commitList) => {
+const getCoCommitsAsBarChart = (commitList) => {
   const counts = {};
 
   const filteredCommits = commitList.filter(commit => {
@@ -26,14 +26,13 @@ const getBarData = (commitList) => {
     { enableScripts: true }
   );
 
-  const chartDataJson = JSON.stringify(barData).replace(/</g, '\u003c');
   const templatePath = path.join(__dirname, "web", "bar.html");
   let html = fs.readFileSync(templatePath, "utf8");
-  html = html.replace("{{barData}}", chartDataJson);
+  html = html.replace("{{ barData }}", JSON.stringify(barData));
 
   panel.webview.html = html;
 };
 
 module.exports = {
-  getBarData
+  getCoCommitsAsBarChart
 };

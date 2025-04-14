@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -10,6 +11,7 @@
       background-color: var(--vscode-editor-background);
       color: var(--vscode-editor-foreground);
     }
+
     svg {
       width: 100%;
       height: 100vh;
@@ -17,11 +19,12 @@
     }
   </style>
 </head>
+
 <body>
   <svg id="chord"></svg>
   <script>
-    const matrix = {{matrixData}};
-    const keys = {{keys}};
+    const matrix = {{ matrixData }};
+    const keys = {{ keys }};
     const width = 1200, height = 1200;
     const outerRadius = Math.min(width, height) * 0.4;
     const innerRadius = outerRadius - 30;
@@ -53,16 +56,36 @@
       .attr("stroke", d => d3.rgb(color(d.index)).darker())
       .attr("d", arc);
 
-    group.append("text")
-      .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
-      .attr("dy", ".35em")
-      .attr("transform", d =>
-        `rotate(${(d.angle * 180 / Math.PI - 90)}) translate(${outerRadius + 20}) ${d.angle > Math.PI ? 'rotate(180)' : ''}`
-      )
-      .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
-      .text(d => keys[d.index])
-      .style("font-size", "11px");
+    // LABEL ARC
+    const labelArc = d3.arc()
+      .innerRadius(outerRadius + 10)
+      .outerRadius(outerRadius + 10)
 
+
+    // Add defs section to hold text paths
+    svgGroup.append("defs")
+      .selectAll("path")
+      .data(chords.groups)
+      .enter()
+      .append("path")
+      .attr("id", d => `label-path-${d.index}`)
+      .attr("d", labelArc);
+
+    // Add curved labels using <textPath>
+    group.append("text")
+      .append("textPath")
+      .attr("startOffset", "50%")
+      .attr("xlink:href", d => `#label-path-${d.index}`)
+      .style("text-anchor", "left")
+      .style("font-size", "12px")
+      .text(d => {
+        const name = keys[d.index];
+        return name.length > 100 ? '...' + name.slice(-100) : name;
+      });
+
+    group.append("title").text(d => keys[d.index]);
+
+    // Ribbons
     const ribbons = svgGroup.append("g")
       .attr("fill-opacity", 0.7)
       .selectAll("path")
@@ -73,6 +96,7 @@
       .attr("stroke", d => d3.rgb(color(d.target.index)).darker())
       .attr("d", ribbon);
 
+    // Hover behavior
     group.on("mouseover", (event, d) => {
       ribbons.transition().duration(200)
         .style("opacity", r =>
@@ -85,4 +109,5 @@
     });
   </script>
 </body>
+
 </html>

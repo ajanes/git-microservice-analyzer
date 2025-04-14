@@ -20,9 +20,11 @@ async function executeCommand(command) {
   return stdout;
 }
 
-async function getLogs(filePath, yearsBack = 1) {
+async function getLogs(filePath) {
+  const daysBack = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("daysBack") || 360;
+
   const sinceDate = new Date();
-  sinceDate.setFullYear(sinceDate.getFullYear() - yearsBack);
+  sinceDate.setDate(sinceDate.getDate() - daysBack);
   const sinceISO = sinceDate.toISOString().split("T")[0]; // Format: YYYY-MM-DD
 
   const logOutput = await executeCommand(
@@ -32,25 +34,34 @@ async function getLogs(filePath, yearsBack = 1) {
   return logOutput.split("\n");
 }
 
+
 async function getDiffTree(commitHash, author, timestamp, filePath) {
+  const modifiedFiles = {};
+  if (!commitHash) return;
+
+  const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("scanFolders") || [];
   const diffOutput = await executeCommand(`cd ${filePath} && git diff-tree --numstat ${commitHash}`);
   const lines = diffOutput.split("\n");
 
   if (!lines || lines.length === 0) return;
 
-  const modifiedFiles = {};
-
   for (let i = 1; i < lines.length; i++) {
-    const match = lines[i].match(/(\d+)\s+(\d+)\s+(.+)\//);
-    if (match) {
-      const added = parseInt(match[1]);
-      const deleted = parseInt(match[2]);
-      const moduleName = match[3];
+    const line = lines[i];
 
-      const editedLines = added + deleted;
-      if (editedLines > LINES_THRESHOLD) {
-        modifiedFiles[moduleName] = editedLines;
-      }
+    // Find the matching config folder in this line
+    const matchedFolder = configFolders.find(folder => line.includes(`${folder}/`));
+    if (!matchedFolder) continue;
+
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 3) continue;
+
+    const added = parseInt(parts[0]);
+    const deleted = parseInt(parts[1]);
+    const editedLines = added + deleted;
+
+    if (editedLines > LINES_THRESHOLD) {
+      const moduleName = matchedFolder;
+      modifiedFiles[moduleName] = (modifiedFiles[moduleName] || 0) + editedLines;
     }
   }
 
@@ -114,19 +125,19 @@ function registerAnalysisCommand(context) {
 
 function registerChartCommands(context) {
   context.subscriptions.push(
-    vscode.commands.registerCommand("git-microservice-analyzer.showBarChart", async () => {
+    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsBarChart", async () => {
       await runAnalysisIfNeeded();
-      bar.getBarData(outputData);
+      bar.getCoCommitsAsBarChart(outputData);
     }),
 
-    vscode.commands.registerCommand("git-microservice-analyzer.showMatrixPanel", async () => {
+    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsMatrix", async () => {
       await runAnalysisIfNeeded();
-      matrix.getMatrixPanel(outputData);
+      matrix.getCoCommitsAsMatrix(outputData);
     }),
 
-    vscode.commands.registerCommand("git-microservice-analyzer.showChordDiagram", async () => {
+    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsChordChart", async () => {
       await runAnalysisIfNeeded();
-      chord.getChordDiagram(outputData);
+      chord.getCoCommitsAsChordChart(outputData);
     })
   );
 }
@@ -188,7 +199,7 @@ function activate(context) {
   registerFileDecorator(context);
 }
 
-function deactivate() { 
+function deactivate() {
   console.log('Extension "git-microservice-analyzer" is now active!');
 }
 
