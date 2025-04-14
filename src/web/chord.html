@@ -17,6 +17,10 @@
       height: 100vh;
       cursor: grab;
     }
+
+    .ribbon {
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -43,6 +47,7 @@
     const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
     const ribbon = d3.ribbon().radius(innerRadius);
     const color = d3.scaleOrdinal(d3.schemeCategory10);
+    const vscode = acquireVsCodeApi();
 
     const chords = chord(matrix);
 
@@ -94,7 +99,19 @@
       .attr("class", "ribbon")
       .attr("fill", d => color(d.target.index))
       .attr("stroke", d => d3.rgb(color(d.target.index)).darker())
-      .attr("d", ribbon);
+      .attr("d", ribbon)
+      .on("click", (event, d) => {
+        const source = keys[d.source.index];
+        const target = keys[d.target.index];
+
+        console.log("Chord clicked:", source, "↔", target);
+
+        vscode.postMessage({
+            type: "chordClick",
+            source,
+            target
+          });
+      });
 
     // Hover behavior
     group.on("mouseover", (event, d) => {

@@ -36,6 +36,14 @@ const getCoCommitsAsChordChart = (commitList) => {
     .replace("{{ keys }}", JSON.stringify(bcdKeys));
 
   panel.webview.html = chordHtml;
+
+  panel.webview.onDidReceiveMessage((message) => {
+    if (message.type === "chordClick") {
+      vscode.window.showInformationMessage(
+        `Chord clicked between:\n${message.source}\nand\n${message.target}`
+      );
+    }
+  });
 };
 
 
