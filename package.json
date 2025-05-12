@@ -1,6 +1,6 @@
 {
   "name": "git-microservice-analyzer",
-  "displayName": "Git Microservices Analyzer",
+  "displayName": "GIT Microservice Analyzer",
   "description": "Plugin that analyzes Git metadata to assess microservice systems.",
   "version": "0.1.0",
   "publisher": "ajanes",
@@ -31,23 +31,23 @@
     "commands": [
       {
         "command": "git-microservice-analyzer.analyze",
-        "title": "GIT Microservices Analyzer: Refresh analysis"
+        "title": "GIT Microservice Analyzer: Refresh analysis"
       },
       {
         "command": "git-microservice-analyzer.showCoCommitsAsBarChart",
-        "title": "GIT Microservices Analyzer: Show co-commited folders"
+        "title": "GIT Microservice Analyzer: Show co-commited folders"
       },
       {
         "command": "git-microservice-analyzer.showCoCommitsAsMatrix",
-        "title": "GIT Microservices Analyzer: Show co-commits as matrix"
+        "title": "GIT Microservice Analyzer: Show co-commits as matrix"
       },
       {
         "command": "git-microservice-analyzer.showCoCommitsAsChart",
-        "title": "GIT Microservices Analyzer: Show co-commits as diagram"
+        "title": "GIT Microservice Analyzer: Show co-commits as diagram"
       }
     ],
     "configuration": {
-      "title": "Git Microservices Analyzer",
+      "title": "GIT Microservice Analyzer",
       "properties": {
         "gitMicroservicesAnalyzer.microserviceFolders": {
           "type": "array",
