@@ -51,17 +51,34 @@
       "properties": {
         "gitMicroservicesAnalyzer.scanFolders": {
           "type": "array",
+          "description": "List of folders to analyze with optional start and stop datetimes",
           "items": {
-            "type": "string"
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative path to the folder"
+              },
+              "startTime": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+                "description": "Start datetime (ISO 8601, e.g., 2024-04-14T00:00:00)"
+              },
+              "stopTime": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+                "description": "Stop datetime (ISO 8601, e.g., 2024-04-14T23:59:59)"
+              }
+            }
           },
-          "default": [],
-          "description": "List of relative folder paths to include in analysis (relative to project root)"
+          "default": []
         },
-        "gitMicroservicesAnalyzer.daysBack": {
-          "type": "number",
-          "default": 1,
-          "minimum": 1,
-          "description": "Number of days back to include in Git history analysis"
+          "gitMicroservicesAnalyzer.startTime": {
+          "type": "string",
+          "default": "1970-01-01T00:00:00",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+          "description": "Start datetime (ISO 8601 format: YYYY-MM-DDTHH:mm:ss) for filtering Git history, e.g., 2024-04-14T08:30:00"
         }
       }
     }

@@ -16,19 +16,18 @@ let logData = [];
 let outputData = [];
 
 async function executeCommand(command) {
+  // console.log(command);
+
   const { stdout } = await exec(command);
   return stdout;
 }
 
-async function getLogs(filePath) {
-  const daysBack = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("daysBack") || 360;
-
-  const sinceDate = new Date();
-  sinceDate.setDate(sinceDate.getDate() - daysBack);
-  const sinceISO = sinceDate.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+async function getLogs(filePath, startTime, stopTime) {
+  const sinceISO = new Date(startTime).toISOString();
+  const untilISO = new Date(stopTime).toISOString();
 
   const logOutput = await executeCommand(
-    `cd ${filePath} && git log --since="${sinceISO}" --pretty=format:"%H%n%an - %ae%n%at"`
+    `cd ${filePath} && git log --since="${sinceISO}" --until="${untilISO}" --pretty=format:"%H%n%an - %ae%n%at"`
   );
 
   return logOutput.split("\n");
@@ -60,6 +59,7 @@ async function getDiffTree(commitHash, author, timestamp, filePath) {
     const editedLines = added + deleted;
 
     if (editedLines > LINES_THRESHOLD) {
+      console.log(matchedFolder);
       const moduleName = matchedFolder;
       modifiedFiles[moduleName] = (modifiedFiles[moduleName] || 0) + editedLines;
     }
@@ -81,7 +81,9 @@ async function runAnalysisIfNeeded() {
 
   vscode.window.showInformationMessage("Running automatic analysis...");
 
-  const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("scanFolders") || [];
+  const config = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer");
+  const globalStart = new Date(config.get("startTime") || "1970-01-01T00:00:00");
+  const configFolders = config.get("scanFolders") || [];
   const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 
   if (!Array.isArray(configFolders) || configFolders.length === 0) {
@@ -89,12 +91,18 @@ async function runAnalysisIfNeeded() {
     return;
   }
 
-  const scanPaths = configFolders.map(f => path.join(workspaceRoot, f));
-
   outputData = [];
 
-  for (const filePath of scanPaths) {
-    logData = await getLogs(filePath);
+  for (const folderConfig of configFolders) {
+    const { path: relPath, startTime: folderStart, stopTime: folderStop } = folderConfig;
+    const filePath = path.join(workspaceRoot, relPath);
+
+    const folderStartDate = folderStart ? new Date(folderStart) : globalStart;
+    const effectiveStart = new Date(Math.max(globalStart.getTime(), folderStartDate.getTime()));
+    const effectiveStop = folderStop ? new Date(folderStop) : new Date();
+
+    logData = await getLogs(filePath, effectiveStart, effectiveStop);
+
     for (let i = 0; i < logData.length; i += 3) {
       await getDiffTree(logData[i], logData[i + 1], parseInt(logData[i + 2]), filePath);
     }
@@ -103,17 +111,31 @@ async function runAnalysisIfNeeded() {
   vscode.window.showInformationMessage("Automatic analysis complete.");
 }
 
+
 function registerAnalysisCommand(context) {
   const disposable = vscode.commands.registerCommand("git-microservice-analyzer.analyze", async () => {
     vscode.window.showInformationMessage("Analysis started.");
 
-    const filePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    const config = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer");
+    const globalStart = new Date(config.get("startTime") || "1970-01-01T00:00:00");
+    const configFolders = config.get("scanFolders") || [];
+    const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 
     outputData = [];
-    logData = await getLogs(filePath);
 
-    for (let i = 0; i < logData.length; i += 3) {
-      await getDiffTree(logData[i], logData[i + 1], parseInt(logData[i + 2]), filePath);
+    for (const folderConfig of configFolders) {
+      const { path: relPath, startTime: folderStart, stopTime: folderStop } = folderConfig;
+      const filePath = path.join(workspaceRoot, relPath);
+
+      const folderStartDate = folderStart ? new Date(folderStart) : globalStart;
+      const effectiveStart = new Date(Math.max(globalStart.getTime(), folderStartDate.getTime()));
+      const effectiveStop = folderStop ? new Date(folderStop) : new Date();
+
+      logData = await getLogs(filePath, effectiveStart, effectiveStop);
+
+      for (let i = 0; i < logData.length; i += 3) {
+        await getDiffTree(logData[i], logData[i + 1], parseInt(logData[i + 2]), filePath);
+      }
     }
 
     vscode.window.showInformationMessage("Analysis complete.");
@@ -122,6 +144,7 @@ function registerAnalysisCommand(context) {
 
   context.subscriptions.push(disposable);
 }
+
 
 function registerChartCommands(context) {
   context.subscriptions.push(
@@ -196,7 +219,7 @@ function activate(context) {
 
   registerAnalysisCommand(context);
   registerChartCommands(context);
-  registerFileDecorator(context);
+  // registerFileDecorator(context);
 }
 
 function deactivate() {
