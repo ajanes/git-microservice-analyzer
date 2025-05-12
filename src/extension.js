@@ -4,7 +4,7 @@ const path = require("path");
 const exec = util.promisify(require("child_process").exec);
 const moment = require("moment");
 
-const chord = require("./chord.js");
+const network = require("./network.js");
 const bar = require("./bar.js");
 const matrix = require("./matrix.js");
 const fileDecorator = require("./classes/CountDecorationProvider");
@@ -16,8 +16,6 @@ let logData = [];
 let outputData = [];
 
 async function executeCommand(command) {
-  // console.log(command);
-
   const { stdout } = await exec(command);
   return stdout;
 }
@@ -33,135 +31,149 @@ async function getLogs(filePath, startTime, stopTime) {
   return logOutput.split("\n");
 }
 
-
-async function getDiffTree(commitHash, author, timestamp, filePath) {
+async function getDiffTree(commitHash, author, timestamp, filePath, configFolders) {
   const modifiedFiles = {};
   if (!commitHash) return;
 
-  const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("scanFolders") || [];
-  const diffOutput = await executeCommand(`cd ${filePath} && git diff-tree --numstat ${commitHash}`);
-  const lines = diffOutput.split("\n");
+  const diffOutput = await executeCommand(
+    `cd ${filePath} && git diff-tree --no-commit-id --numstat ${commitHash}`
+  );
 
-  if (!lines || lines.length === 0) return;
+  if (diffOutput != "") {
+    const lines = diffOutput.split("\n");
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
+    if (!lines || lines.length === 0) return;
 
-    // Find the matching config folder in this line
-    const matchedFolder = configFolders.find(folder => line.includes(`${folder}/`));
-    if (!matchedFolder) continue;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
 
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 3) continue;
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 3) continue;
 
-    const added = parseInt(parts[0]);
-    const deleted = parseInt(parts[1]);
-    const editedLines = added + deleted;
+      const added = parseInt(parts[0]);
+      const deleted = parseInt(parts[1]);
+      const editedLines = added + deleted;
+      const item = parts[2]
 
-    if (editedLines > LINES_THRESHOLD) {
-      console.log(matchedFolder);
-      const moduleName = matchedFolder;
-      modifiedFiles[moduleName] = (modifiedFiles[moduleName] || 0) + editedLines;
+      // Find the matching config folder in this line
+      const matchedFolder = configFolders.find((folder) => 
+        item.includes(`${folder.path}/`)
+      );
+      if (!matchedFolder) continue;
+
+      if (editedLines >= LINES_THRESHOLD) {
+        const moduleName = matchedFolder.path;
+        modifiedFiles[moduleName] = (modifiedFiles[moduleName] || 0) + editedLines;
+      }
     }
-  }
 
-  const [name, email] = author.split(" - ");
-  if (lines[0] && Object.keys(modifiedFiles).length >= MODULES_THRESHOLD) {
-    outputData.push({
-      commitName: lines[0],
-      author: { name, email },
-      date: moment.unix(timestamp).format("DD/MM/YYYY HH:mm:ss"),
-      modifiedFiles,
-    });
+    const moduleCount = Object.keys(modifiedFiles).length;
+    if (moduleCount >= MODULES_THRESHOLD) {
+      const [name, email] = author.split(" - ");
+      outputData.push({
+        commitName: commitHash,
+        author: { name, email },
+        date: moment.unix(timestamp).format("DD/MM/YYYY HH:mm:ss"),
+        modifiedFiles,
+      });
+    }
   }
 }
 
 async function runAnalysisIfNeeded() {
   if (outputData.length > 0) return;
 
-  vscode.window.showInformationMessage("Running automatic analysis...");
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    100
+  );
+  statusBarItem.text = "Running analysis...";
+  statusBarItem.show();
 
   const config = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer");
-  const globalStart = new Date(config.get("startTime") || "1970-01-01T00:00:00");
-  const configFolders = config.get("scanFolders") || [];
+  const globalStart = new Date(
+    config.get("startTime") || "1970-01-01T00:00:00"
+  );
+  const configFolders = config.get("microserviceFolders") || [];
   const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
 
   if (!Array.isArray(configFolders) || configFolders.length === 0) {
-    vscode.window.showErrorMessage("No scan folders defined in settings. Please set 'gitMicroservicesAnalyzer.scanFolders' in .vscode/settings.json.");
+    vscode.window.showErrorMessage(
+      "No scan folders defined in settings. Please set 'gitMicroservicesAnalyzer.microserviceFolders' in .vscode/settings.json."
+    );
     return;
   }
 
   outputData = [];
 
   for (const folderConfig of configFolders) {
-    const { path: relPath, startTime: folderStart, stopTime: folderStop } = folderConfig;
+    const {
+      path: relPath,
+      startTime: folderStart,
+      stopTime: folderStop,
+    } = folderConfig;
     const filePath = path.join(workspaceRoot, relPath);
 
     const folderStartDate = folderStart ? new Date(folderStart) : globalStart;
-    const effectiveStart = new Date(Math.max(globalStart.getTime(), folderStartDate.getTime()));
+    const effectiveStart = new Date(
+      Math.max(globalStart.getTime(), folderStartDate.getTime())
+    );
     const effectiveStop = folderStop ? new Date(folderStop) : new Date();
 
     logData = await getLogs(filePath, effectiveStart, effectiveStop);
+    const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("microserviceFolders") || [];
 
     for (let i = 0; i < logData.length; i += 3) {
-      await getDiffTree(logData[i], logData[i + 1], parseInt(logData[i + 2]), filePath);
+      await getDiffTree(
+        logData[i],
+        logData[i + 1],
+        parseInt(logData[i + 2]),
+        filePath,
+        configFolders
+      );
     }
   }
 
-  vscode.window.showInformationMessage("Automatic analysis complete.");
+  statusBarItem.dispose();
 }
 
-
 function registerAnalysisCommand(context) {
-  const disposable = vscode.commands.registerCommand("git-microservice-analyzer.analyze", async () => {
-    vscode.window.showInformationMessage("Analysis started.");
-
-    const config = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer");
-    const globalStart = new Date(config.get("startTime") || "1970-01-01T00:00:00");
-    const configFolders = config.get("scanFolders") || [];
-    const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
-
-    outputData = [];
-
-    for (const folderConfig of configFolders) {
-      const { path: relPath, startTime: folderStart, stopTime: folderStop } = folderConfig;
-      const filePath = path.join(workspaceRoot, relPath);
-
-      const folderStartDate = folderStart ? new Date(folderStart) : globalStart;
-      const effectiveStart = new Date(Math.max(globalStart.getTime(), folderStartDate.getTime()));
-      const effectiveStop = folderStop ? new Date(folderStop) : new Date();
-
-      logData = await getLogs(filePath, effectiveStart, effectiveStop);
-
-      for (let i = 0; i < logData.length; i += 3) {
-        await getDiffTree(logData[i], logData[i + 1], parseInt(logData[i + 2]), filePath);
-      }
+  const disposable = vscode.commands.registerCommand(
+    "git-microservice-analyzer.analyze",
+    async () => {
+      outputData = [];
+      runAnalysisIfNeeded();
     }
-
-    vscode.window.showInformationMessage("Analysis complete.");
-    return true;
-  });
+  );
 
   context.subscriptions.push(disposable);
 }
 
-
 function registerChartCommands(context) {
   context.subscriptions.push(
-    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsBarChart", async () => {
-      await runAnalysisIfNeeded();
-      bar.getCoCommitsAsBarChart(outputData);
-    }),
+    vscode.commands.registerCommand(
+      "git-microservice-analyzer.showCoCommitsAsBarChart",
+      async () => {
+        await runAnalysisIfNeeded();
+        bar.getCoCommitsAsBarChart(outputData);
+      }
+    ),
 
-    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsMatrix", async () => {
-      await runAnalysisIfNeeded();
-      matrix.getCoCommitsAsMatrix(outputData);
-    }),
+    vscode.commands.registerCommand(
+      "git-microservice-analyzer.showCoCommitsAsMatrix",
+      async () => {
+        await runAnalysisIfNeeded();
+        matrix.getCoCommitsAsMatrix(outputData);
+      }
+    ),
 
-    vscode.commands.registerCommand("git-microservice-analyzer.showCoCommitsAsChordChart", async () => {
-      await runAnalysisIfNeeded();
-      chord.getCoCommitsAsChordChart(outputData);
-    })
+    vscode.commands.registerCommand(
+      "git-microservice-analyzer.showCoCommitsAsChart",
+      async () => {
+        await runAnalysisIfNeeded();
+        network.getCoCommitsAsChart(outputData);
+      }
+    )
   );
 }
 
@@ -200,11 +212,13 @@ function registerFileDecorator(context) {
     provider.reset();
 
     const sortedModules = editedModules
-      .map(name => ({ name, length: modules[name].length }))
+      .map((name) => ({ name, length: modules[name].length }))
       .sort((a, b) => b.length - a.length);
 
     const dominantModule = sortedModules[0]?.name;
-    const filteredModules = editedModules.filter(name => name !== dominantModule);
+    const filteredModules = editedModules.filter(
+      (name) => name !== dominantModule
+    );
 
     for (const module of filteredModules) {
       for (const uri of modules[module]) {

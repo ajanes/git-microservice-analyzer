@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
 
-const getCoCommitsAsChordChart = (commitList) => {
+const getCoCommitsAsChart = (commitList) => {
   const barChordData = {};
 
   commitList.forEach((oc) => {
@@ -16,8 +16,8 @@ const getCoCommitsAsChordChart = (commitList) => {
   });
 
   const bcdKeys = Object.keys(barChordData).sort();
-  const bcdOutput = bcdKeys.map(k1 =>
-    bcdKeys.map(k2 => barChordData[k1]?.[k2] ?? 0)
+  const bcdOutput = bcdKeys.map((k1) =>
+    bcdKeys.map((k2) => barChordData[k1]?.[k2] ?? 0)
   );
 
   const panel = vscode.window.createWebviewPanel(
@@ -25,7 +25,7 @@ const getCoCommitsAsChordChart = (commitList) => {
     "Co-commits (chord diagram)",
     vscode.ViewColumn.Three,
     {
-      enableScripts: true
+      enableScripts: true,
     }
   );
 
@@ -36,17 +36,8 @@ const getCoCommitsAsChordChart = (commitList) => {
     .replace("{{ keys }}", JSON.stringify(bcdKeys));
 
   panel.webview.html = chordHtml;
-
-  panel.webview.onDidReceiveMessage((message) => {
-    if (message.type === "chordClick") {
-      vscode.window.showInformationMessage(
-        `Chord clicked between:\n${message.source}\nand\n${message.target}`
-      );
-    }
-  });
 };
 
-
 module.exports = {
-  getCoCommitsAsChordChart
+  getCoCommitsAsChart,
 };

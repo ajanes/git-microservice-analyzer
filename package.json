@@ -42,14 +42,14 @@
         "title": "GIT Microservices Analyzer: Show co-commits as matrix"
       },
       {
-        "command": "git-microservice-analyzer.showCoCommitsAsChordChart",
-        "title": "GIT Microservices Analyzer: Show co-commits as chord diagram"
+        "command": "git-microservice-analyzer.showCoCommitsAsChart",
+        "title": "GIT Microservices Analyzer: Show co-commits as diagram"
       }
     ],
     "configuration": {
       "title": "Git Microservices Analyzer",
       "properties": {
-        "gitMicroservicesAnalyzer.scanFolders": {
+        "gitMicroservicesAnalyzer.microserviceFolders": {
           "type": "array",
           "description": "List of folders to analyze with optional start and stop datetimes",
           "items": {

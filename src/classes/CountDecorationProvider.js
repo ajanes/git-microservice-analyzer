@@ -9,14 +9,14 @@ class CountDecorationProvider {
     this.handleChange();
 
     this.fileList = [];
-    this.scanFolders = this.loadScanFolders();
+    this.microserviceFolders = this.loadmicroserviceFolders();
 
     this.disposables = [];
     this.disposables.push(vscode.window.registerFileDecorationProvider(this));
   }
 
-  loadScanFolders() {
-    const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("scanFolders") || [];
+  loadmicroserviceFolders() {
+    const configFolders = vscode.workspace.getConfiguration("gitMicroservicesAnalyzer").get("microserviceFolders") || [];
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
     return configFolders.map(folder => path.join(workspaceRoot, folder));
   }
@@ -36,7 +36,7 @@ class CountDecorationProvider {
   }
 
   provideFileDecoration(uri) {
-    if (!this.scanFolders.some(folderPath => uri.fsPath.startsWith(folderPath))) {
+    if (!this.microserviceFolders.some(folderPath => uri.fsPath.startsWith(folderPath))) {
       return;
     }
 
