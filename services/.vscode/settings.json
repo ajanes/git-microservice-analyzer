@@ -1,0 +1,6 @@
+{
+    "gitMicroservicesAnalyzer.microserviceFolders": [
+        {"path": "./service1"},
+        {"path": "./service2"}
+    ]
+}
